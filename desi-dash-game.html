@@ -894,11 +894,12 @@ function resizeCanvas(){
 window.addEventListener('resize',()=>{ if(current==='game') resizeCanvas(); });
 
 function diffParams(){
+  // base = world units/sec (lower = slower, calmer run)
   switch(S.settings.difficulty){
-    case 'easy':   return {base:13, gap:11, grow:0.010};
-    case 'hard':   return {base:23, gap:7,  grow:0.014};
-    case 'insane': return {base:29, gap:5.5,grow:0.018};
-    default:       return {base:18, gap:8.5,grow:0.012};
+    case 'easy':   return {base:8,  gap:13, grow:0.006};
+    case 'hard':   return {base:14, gap:8.5,grow:0.009};
+    case 'insane': return {base:18, gap:7,  grow:0.011};
+    default:       return {base:11, gap:10.5,grow:0.007};
   }
 }
 
@@ -1028,7 +1029,7 @@ cv.addEventListener('mouseup',e=>{ if(!mdown)return; mdown=false; const dx=e.cli
 function update(dt){
   const p=RUN.player;
   RUN.t+=dt;
-  RUN.speed=Math.min(RUN.base*1.9, RUN.base + RUN.dist*RUN.grow);
+  RUN.speed=Math.min(RUN.base*1.55, RUN.base + RUN.dist*RUN.grow);
   const move=RUN.speed*dt;
   RUN.dist+=move; RUN.worldZ+=move;
 
@@ -1103,59 +1104,105 @@ function draw(){
 }
 function drawSky(){
   const hy=H*0.5;
+  // bright daytime sky
   let g=ctx.createLinearGradient(0,0,0,hy);
-  g.addColorStop(0,'#1a0c3a'); g.addColorStop(.55,'#3a1a6e'); g.addColorStop(1,'#ff6aa8');
+  g.addColorStop(0,'#2f9bff'); g.addColorStop(.55,'#7ec6ff'); g.addColorStop(1,'#d6f1ff');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,hy);
-  // sun
-  ctx.fillStyle='rgba(255,210,90,.9)'; ctx.beginPath(); ctx.arc(W*0.5,hy*0.62,38,0,7); ctx.fill();
-  ctx.fillStyle='rgba(255,170,80,.25)'; ctx.beginPath(); ctx.arc(W*0.5,hy*0.62,70,0,7); ctx.fill();
+  // sun with soft halo
+  const sx=W*0.76, sy=hy*0.30;
+  ctx.fillStyle='rgba(255,244,170,.45)'; ctx.beginPath(); ctx.arc(sx,sy,60,0,7); ctx.fill();
+  ctx.fillStyle='#fff3a6'; ctx.beginPath(); ctx.arc(sx,sy,32,0,7); ctx.fill();
+  // drifting clouds
   if(S.settings.quality!=='low'){
-    ctx.fillStyle='rgba(255,255,255,.6)';
-    for(let i=0;i<18;i++){ const x=((i*97+ (RUN.worldZ*2))%W); const y=(i*53)%(hy*0.5)+6; ctx.fillRect(x,y,2,2); }
+    const span=W+260, off=(RUN.worldZ*1.1)%span;
+    drawCloud(((W*0.18-off)%span+span)%span-130, hy*0.30, 1.0);
+    drawCloud(((W*0.55-off*0.7)%span+span)%span-130, hy*0.48, 0.8);
+    drawCloud(((W*0.92-off*1.3)%span+span)%span-130, hy*0.18, 1.25);
   }
+  // distant skyline silhouette sitting on the horizon
+  const cw=Math.max(22,W/16);
+  for(let i=0;i<Math.ceil(W/cw)+1;i++){
+    const bh=hy*0.10 + ((i*53)%5)*hy*0.045;
+    ctx.fillStyle = (i%2)? 'rgba(120,150,205,.55)':'rgba(150,175,220,.5)';
+    ctx.fillRect(i*cw - ((RUN.worldZ*2)%cw), hy-bh, cw-3, bh+2);
+  }
+}
+function drawCloud(x,y,s){
+  ctx.fillStyle='rgba(255,255,255,.92)';
+  ctx.beginPath();
+  ctx.arc(x,y,22*s,0,7); ctx.arc(x+26*s,y+6*s,17*s,0,7);
+  ctx.arc(x-24*s,y+7*s,15*s,0,7); ctx.arc(x+4*s,y-12*s,16*s,0,7);
+  ctx.fill();
 }
 function drawGround(){
   const hy=H*0.5;
-  ctx.fillStyle='#241046'; ctx.fillRect(0,hy,W,H-hy);
-  // road stripes (rumble) far->near
-  const SL=3, roadHalf=1.7;
-  for(let i=26;i>=0;i--){
-    const zN=i*SL - (RUN.worldZ % SL);
-    const zF=zN+SL;
-    const a=project(-roadHalf,0,zF), b=project(roadHalf,0,zF), c=project(roadHalf,0,zN), d=project(-roadHalf,0,zN);
+  // grassy embankment on the sides
+  let g=ctx.createLinearGradient(0,hy,0,H);
+  g.addColorStop(0,'#84c45f'); g.addColorStop(1,'#5f9e44');
+  ctx.fillStyle=g; ctx.fillRect(0,hy,W,H-hy);
+  const roadHalf=1.7;
+  // gravel track-bed
+  const fL=project(-roadHalf,0,FAR), fR=project(roadHalf,0,FAR), nL=project(-roadHalf,0,0.2), nR=project(roadHalf,0,0.2);
+  if(fL&&fR&&nL&&nR){
+    ctx.fillStyle='#a39c90';
+    ctx.beginPath(); ctx.moveTo(fL.x,fL.y);ctx.lineTo(fR.x,fR.y);ctx.lineTo(nR.x,nR.y);ctx.lineTo(nL.x,nL.y);ctx.closePath(); ctx.fill();
+  }
+  // wooden sleepers (cross-ties) repeating toward camera
+  const SL=1.5;
+  for(let i=46;i>=0;i--){
+    const z=i*SL - (RUN.worldZ%SL);
+    if(z<=0.12) continue;
+    const a=project(-roadHalf,0.01,z-0.34), b=project(roadHalf,0.01,z-0.34), c=project(roadHalf,0.01,z+0.34), d=project(-roadHalf,0.01,z+0.34);
     if(!a||!b||!c||!d) continue;
-    ctx.fillStyle=(i%2===0)?'#3a2a5e':'#322452';
-    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=(i%2)?'#7a5a36':'#8a663d';
+    ctx.beginPath(); ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.lineTo(d.x,d.y);ctx.closePath(); ctx.fill();
   }
-  // lane separators (dashed)
-  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=2;
-  for(const lx of [-0.5,0.5]){
-    for(let i=24;i>=0;i--){
-      const zN=i*2 - (RUN.worldZ%2); const zF=zN+1;
-      const a=project(lx,0.01,zN), b=project(lx,0.01,zF);
-      if(!a||!b) continue;
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-    }
-  }
-  // road edges glow
-  ctx.strokeStyle='rgba(0,229,255,.5)'; ctx.lineWidth=3;
+  // shiny steel rails (two per lane = 3 train tracks)
+  for(const lx of LANE_X){ rail(lx-0.34); rail(lx+0.34); }
+  // yellow safety edge lines
   for(const ex of [-roadHalf,roadHalf]){
-    const a=project(ex,0.02,0.2), b=project(ex,0.02,FAR*0.5);
-    if(a&&b){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+    const inn=ex<0?0.07:-0.07;
+    const a=project(ex,0.05,0.25), b=project(ex,0.05,FAR*0.7), a2=project(ex+inn,0.05,0.25), b2=project(ex+inn,0.05,FAR*0.7);
+    if(a&&b&&a2&&b2){ ctx.fillStyle='#ffd23d'; ctx.beginPath(); ctx.moveTo(b.x,b.y);ctx.lineTo(b2.x,b2.y);ctx.lineTo(a2.x,a2.y);ctx.lineTo(a.x,a.y);ctx.closePath(); ctx.fill(); }
   }
+}
+function rail(lx){
+  const w=0.04, y=0.07, zN=0.25, zF=FAR*0.72;
+  const nA=project(lx-w,y,zN), nB=project(lx+w,y,zN), fA=project(lx-w,y,zF), fB=project(lx+w,y,zF);
+  if(!nA||!nB||!fA||!fB) return;
+  ctx.fillStyle='#cdd2da';
+  ctx.beginPath(); ctx.moveTo(fA.x,fA.y);ctx.lineTo(fB.x,fB.y);ctx.lineTo(nB.x,nB.y);ctx.lineTo(nA.x,nA.y);ctx.closePath(); ctx.fill();
+  // highlight
+  const hN=project(lx,y+0.02,zN), hF=project(lx,y+0.02,zF);
+  if(hN&&hF){ ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=Math.max(1,nA.s*0.012); ctx.beginPath(); ctx.moveTo(hF.x,hF.y);ctx.lineTo(hN.x,hN.y); ctx.stroke(); }
 }
 function drawScenery(){
   if(S.settings.quality==='low') return;
-  const step=6, cols=['#2a1b54','#3a2168','#1f2d6b','#5e2a7a'];
-  const n = S.settings.quality==='high'?16:11;
+  const step=7;
+  const palette=[['#ff8a5b','#e85d2f'],['#ffd24a','#e0a800'],['#5bd6e8','#2aa6bd'],['#9b8cff','#6a55d6'],['#7be0a0','#39b06a'],['#ff7aa8','#e0457c']];
+  const n=S.settings.quality==='high'?14:10;
   for(let i=n;i>=1;i--){
     const z=i*step - (RUN.worldZ%step);
-    if(z<=0) continue;
-    const h=1.6 + ((i*7)%5)*0.7;
-    const c=cols[i%cols.length];
-    box3D(-2.7,1.1,0,h,z-0.6,z+0.6,c,'#16103a');
-    box3D(2.7,1.1,0,h,z-0.6,z+0.6,c,'#16103a');
-    // windows hint
+    if(z<=0.5) continue;
+    const h=2.2+((i*7)%4)*0.95;
+    building(-3.1, z, h, palette[i%palette.length]);
+    building(3.1, z, h, palette[(i*3+2)%palette.length]);
+  }
+}
+function building(x,z,h,pal){
+  const w=1.5, zN=z-0.75, zF=z+0.75;
+  box3D(x, w, 0, h, zN, zF, pal[0], pal[1]);
+  // window grid on the near face
+  const tl=project(x-w/2,h,zN), br=project(x+w/2,0,zN);
+  if(!tl||!br) return;
+  const x0=Math.min(tl.x,br.x), x1=Math.max(tl.x,br.x), y0=Math.min(tl.y,br.y), y1=Math.max(tl.y,br.y);
+  const ww=x1-x0, hh=y1-y0;
+  if(ww<10||hh<14) return;
+  const cols=3, rows=Math.max(2,Math.round(hh/(ww/2.2)));
+  const cwid=ww/cols, rhei=hh/rows, gw=cwid*0.5, gh=rhei*0.55;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    ctx.fillStyle=((r+c)%4===0)?'rgba(120,210,255,.95)':'rgba(225,240,255,.85)';
+    ctx.fillRect(x0+c*cwid+(cwid-gw)/2, y0+r*rhei+(rhei-gh)/2, gw, gh);
   }
 }
 function box3D(x,w,yB,yT,zN,zF,colFront,colTop){
