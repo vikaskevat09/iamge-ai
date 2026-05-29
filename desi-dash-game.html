@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Desi Dash — Casino Surfers</title>
+<style>
+/* ============================================================
+   DESI DASH — CASINO SURFERS
+   Single-file 3D-style endless runner + casino chips game
+   ============================================================ */
+:root{
+  --bg0:#070617;
+  --bg1:#120a2e;
+  --bg2:#1b0f3d;
+  --gold:#ffcb3d;
+  --gold2:#ff9d00;
+  --neon:#00e5ff;
+  --neon2:#ff2bd6;
+  --green:#23e08a;
+  --red:#ff4d6d;
+  --txt:#f3eefe;
+  --muted:#a89fce;
+  --card:rgba(255,255,255,.05);
+  --line:rgba(255,255,255,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:'Trebuchet MS','Segoe UI',system-ui,Arial,sans-serif;
+  background:radial-gradient(1200px 700px at 50% -10%, #2a154f 0%, var(--bg1) 40%, var(--bg0) 100%);
+  color:var(--txt);
+  overflow:hidden;
+  user-select:none;
+}
+#app{position:relative;width:100vw;height:100vh;max-width:520px;margin:0 auto;overflow:hidden;}
+
+/* ---------- Top bar ---------- */
+#topbar{
+  position:absolute;top:0;left:0;right:0;height:58px;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:linear-gradient(180deg,rgba(10,6,30,.95),rgba(10,6,30,.4));
+  backdrop-filter:blur(6px);border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:8px;font-weight:900;letter-spacing:.5px;}
+.brand .logo{
+  width:30px;height:30px;border-radius:8px;
+  background:conic-gradient(from 0deg,var(--gold),var(--neon2),var(--neon),var(--gold));
+  box-shadow:0 0 14px rgba(255,203,61,.6);
+}
+.brand small{display:block;font-size:9px;color:var(--gold);letter-spacing:2px;font-weight:700;}
+.balance{
+  display:flex;align-items:center;gap:8px;background:var(--card);
+  border:1px solid var(--line);padding:6px 12px;border-radius:30px;cursor:pointer;
+}
+.balance .chip-ico{width:20px;height:20px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#fff6c8,var(--gold) 45%,var(--gold2));
+  border:2px dashed #7a4d00;}
+.balance b{font-size:16px;color:var(--gold);}
+.balance span{font-size:10px;color:var(--muted);display:block;line-height:1;}
+
+/* ---------- Screens ---------- */
+.screen{
+  position:absolute;inset:0;top:58px;z-index:10;
+  overflow-y:auto;overflow-x:hidden;padding:18px 16px 90px;
+  display:none;animation:fade .35s ease;
+}
+.screen.active{display:block;}
+.screen.full{top:0;padding:0;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+h1.title{font-size:26px;margin:6px 0 2px;font-weight:900;
+  background:linear-gradient(90deg,var(--gold),#fff,var(--neon));
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.sub{color:var(--muted);font-size:13px;margin:0 0 16px;}
+.section-h{font-size:15px;font-weight:800;margin:18px 0 10px;color:var(--gold);letter-spacing:.5px;}
+
+/* ---------- Cards & buttons ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;
+  color:#1a0e00;background:linear-gradient(90deg,var(--gold),var(--gold2));
+  box-shadow:0 8px 22px rgba(255,157,0,.35);transition:transform .12s ease,filter .12s;
+}
+.btn:active{transform:scale(.97);}
+.btn.alt{background:linear-gradient(90deg,var(--neon),#1f8fff);color:#021018;box-shadow:0 8px 22px rgba(0,229,255,.3);}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt);box-shadow:none;}
+.btn.danger{background:linear-gradient(90deg,#ff6b8b,var(--red));color:#fff;box-shadow:0 8px 22px rgba(255,77,109,.3);}
+.btn.green{background:linear-gradient(90deg,#43f2a3,var(--green));color:#012a18;box-shadow:0 8px 22px rgba(35,224,138,.3);}
+.btn:disabled{filter:grayscale(.7) brightness(.7);cursor:not-allowed;}
+.btn-row{display:flex;gap:10px;}
+.btn-row .btn{margin:0;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+input,textarea,select{
+  width:100%;padding:13px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(0,0,0,.25);color:var(--txt);font-size:15px;font-family:inherit;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--neon);}
+label{font-size:12px;color:var(--muted);display:block;margin:10px 0 5px;font-weight:700;}
+
+/* ---------- Menu tiles ---------- */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tile{
+  background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  border:1px solid var(--line);border-radius:18px;padding:16px 14px;cursor:pointer;
+  display:flex;flex-direction:column;gap:6px;transition:transform .12s,border-color .12s;
+}
+.tile:active{transform:scale(.96);}
+.tile .ic{font-size:26px;}
+.tile b{font-size:14px;}
+.tile small{color:var(--muted);font-size:11px;}
+
+/* ---------- Chips shelf ---------- */
+.chips-shelf{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0;}
+.poker-chip{
+  width:62px;height:62px;border-radius:50%;position:relative;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#1a1a1a;
+  box-shadow:0 6px 14px rgba(0,0,0,.4);transition:transform .12s;
+  border:3px dashed rgba(255,255,255,.7);
+}
+.poker-chip:active{transform:scale(.93);}
+.poker-chip::after{content:"";position:absolute;inset:9px;border-radius:50%;border:2px solid rgba(0,0,0,.18);}
+.pc-red{background:radial-gradient(circle at 35% 30%,#ff8aa0,#e8264f 60%,#a3123a);}
+.pc-blue{background:radial-gradient(circle at 35% 30%,#8fd6ff,#1f8fff 60%,#0a4fb0);color:#fff;}
+.pc-green{background:radial-gradient(circle at 35% 30%,#9bf5cf,#23e08a 60%,#0c8a55);}
+.pc-gold{background:radial-gradient(circle at 35% 30%,#fff3bf,#ffcb3d 55%,#c98c00);}
+.pc-purple{background:radial-gradient(circle at 35% 30%,#dab8ff,#9b4dff 60%,#5e1ec4);color:#fff;}
+.pc-black{background:radial-gradient(circle at 35% 30%,#5a5a6e,#1c1c2b 60%,#08080f);color:#ffd86b;}
+
+/* ---------- Character select ---------- */
+.char-row{display:flex;gap:12px;overflow-x:auto;padding:6px 2px 10px;}
+.char{
+  min-width:130px;border-radius:18px;padding:14px;cursor:pointer;text-align:center;
+  border:2px solid var(--line);background:rgba(255,255,255,.04);transition:.15s;
+}
+.char.sel{border-color:var(--gold);box-shadow:0 0 18px rgba(255,203,61,.4);}
+.char .ava{
+  width:84px;height:84px;border-radius:50%;margin:0 auto 8px;position:relative;overflow:hidden;
+  border:3px solid rgba(255,255,255,.25);
+}
+.char b{display:block;font-size:14px;}
+.char small{color:var(--muted);font-size:11px;}
+.locked{filter:grayscale(.8) brightness(.6);}
+
+/* ---------- Payment methods ---------- */
+.pay-list{display:grid;gap:10px;}
+.pay{
+  display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;cursor:pointer;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);transition:.15s;
+}
+.pay.sel{border-color:var(--neon);background:rgba(0,229,255,.08);}
+.pay .pic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;background:linear-gradient(135deg,#2a2150,#15102e);border:1px solid var(--line);}
+.pay b{font-size:14px;}
+.pay small{display:block;color:var(--muted);font-size:11px;}
+
+/* ---------- HUD (in game) ---------- */
+#game.screen{background:#000;}
+#gameCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.hud{position:absolute;z-index:20;pointer-events:none;}
+#hudTop{top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;}
+.hud-pill{background:rgba(8,4,24,.7);border:1px solid var(--line);border-radius:14px;padding:8px 12px;backdrop-filter:blur(4px);}
+.hud-pill .k{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.hud-pill .v{font-size:18px;font-weight:900;}
+#multBox .v{color:var(--green);}
+#multBox.warn .v{color:var(--gold);}
+#cashWrap{position:absolute;bottom:18px;left:14px;right:14px;z-index:25;display:flex;gap:10px;}
+#cashWrap .btn{pointer-events:auto;}
+.ctrl-hint{position:absolute;bottom:84px;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:12px;z-index:21;}
+
+/* On-screen dpad */
+#touchControls{position:absolute;inset:0;z-index:22;display:none;}
+.tc-zone{position:absolute;}
+
+/* ---------- Modal / toast ---------- */
+#overlay{position:absolute;inset:0;z-index:60;background:rgba(4,2,14,.78);
+  display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);}
+#overlay.show{display:flex;}
+.modal{width:100%;max-width:380px;background:linear-gradient(160deg,#1d1140,#120a2e);
+  border:1px solid var(--line);border-radius:22px;padding:24px;text-align:center;animation:pop .3s ease;}
+@keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal .big{font-size:40px;margin-bottom:6px;}
+.modal h2{margin:4px 0;font-size:22px;}
+.modal p{color:var(--muted);margin:6px 0 18px;font-size:14px;}
+.win-amt{font-size:34px;font-weight:900;color:var(--gold);margin:8px 0;}
+
+#toast{position:absolute;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+  z-index:80;background:#1c1340;border:1px solid var(--line);color:#fff;padding:12px 18px;border-radius:30px;
+  font-size:13px;font-weight:700;transition:transform .35s ease;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:90%;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ---------- Bottom nav ---------- */
+#bottomNav{position:absolute;bottom:0;left:0;right:0;height:64px;z-index:35;
+  display:flex;background:linear-gradient(0deg,rgba(8,4,24,.98),rgba(8,4,24,.7));
+  border-top:1px solid var(--line);backdrop-filter:blur(8px);}
+#bottomNav.hide{display:none;}
+.nav-i{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--muted);font-size:10px;cursor:pointer;font-weight:700;}
+.nav-i .ni{font-size:20px;}
+.nav-i.active{color:var(--gold);}
+
+.stat-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;}
+.stat-row:last-child{border:none;}
+.stat-row span{color:var(--muted);}
+.stat-row b{color:var(--txt);}
+
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);}
+.toggle:last-child{border:none;}
+.sw{width:48px;height:27px;border-radius:30px;background:rgba(255,255,255,.15);position:relative;cursor:pointer;transition:.2s;}
+.sw.on{background:linear-gradient(90deg,var(--green),#1bd17e);}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.2s;}
+.sw.on::after{left:24px;}
+
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--neon);font-size:14px;cursor:pointer;margin-bottom:8px;font-weight:700;}
+.pill-tag{display:inline-block;font-size:10px;padding:3px 9px;border-radius:20px;background:rgba(255,203,61,.15);color:var(--gold);font-weight:800;letter-spacing:.5px;}
+.note{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5;}
+.hr{height:1px;background:var(--line);margin:14px 0;}
+.amt-quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.amt-quick button{flex:1;min-width:60px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--txt);font-weight:800;cursor:pointer;}
+.amt-quick button.sel{border-color:var(--gold);color:var(--gold);}
+.bet-display{text-align:center;font-size:44px;font-weight:900;color:var(--gold);margin:6px 0;}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.history-item:last-child{border:none;}
+.badge-win{color:var(--green);font-weight:800;}
+.badge-loss{color:var(--red);font-weight:800;}
+::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>DESI DASH<small>CASINO SURFERS</small></div>
+    </div>
+    <div class="balance" onclick="go('wallet')">
+      <div class="chip-ico"></div>
+      <div><span>CHIPS</span><b id="balTop">0</b></div>
+    </div>
+  </div>
+  <!-- SCREENS-INSERT -->
+
+
+
+  <!-- ================= HOME ================= -->
+  <div class="screen active" id="home">
+    <span class="pill-tag">DEMO • PLAY-MONEY ONLY</span>
+    <h1 class="title">Namaste, Runner!</h1>
+    <p class="sub">Bet your chips, dash through the city, grab multiplier coins &amp; cash out before you crash.</p>
+
+    <div class="card" style="text-align:center;background:linear-gradient(160deg,rgba(255,203,61,.12),rgba(255,43,214,.06));">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;">YOUR BALANCE</div>
+      <div style="font-size:40px;font-weight:900;color:var(--gold);" id="balHome">0</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">CHIPS</div>
+      <div class="btn-row">
+        <button class="btn green" onclick="go('bet')">▶ PLAY NOW</button>
+        <button class="btn alt" onclick="go('buy')">+ ADD CHIPS</button>
+      </div>
+    </div>
+
+    <div class="card" id="freeBonusCard" style="display:none;text-align:center;">
+      <div class="big" style="font-size:30px;">🎁</div>
+      <b>Daily Free Credits</b>
+      <p class="sub" style="margin:6px 0 12px;">Claim free chips to keep the dash going.</p>
+      <button class="btn" onclick="claimFree()">CLAIM 500 FREE CHIPS</button>
+    </div>
+
+    <div class="section-h">Menu</div>
+    <div class="tiles">
+      <div class="tile" onclick="go('select')"><div class="ic">🏃</div><b>Characters</b><small>Pick your Indian runner</small></div>
+      <div class="tile" onclick="go('buy')"><div class="ic">🪙</div><b>Buy Chips</b><small>Demo payment methods</small></div>
+      <div class="tile" onclick="go('withdraw')"><div class="ic">🏦</div><b>Withdraw</b><small>Cash out your chips</small></div>
+      <div class="tile" onclick="go('profile')"><div class="ic">👤</div><b>Profile</b><small>Stats &amp; avatar</small></div>
+      <div class="tile" onclick="go('settings')"><div class="ic">⚙️</div><b>Settings</b><small>Sound &amp; graphics</small></div>
+      <div class="tile" onclick="go('feedback')"><div class="ic">💬</div><b>Feedback</b><small>Tell us anything</small></div>
+    </div>
+
+    <div class="section-h">How to win</div>
+    <div class="card">
+      <div class="stat-row"><span>1 · Place a bet</span><b>from your chips</b></div>
+      <div class="stat-row"><span>2 · Collect coins</span><b class="badge-win">+1.0x → +1.5x each</b></div>
+      <div class="stat-row"><span>3 · Cash out anytime</span><b class="badge-win">bet × multiplier</b></div>
+      <div class="stat-row"><span>4 · Crash before cashout</span><b class="badge-loss">lose the bet</b></div>
+    </div>
+    <p class="note">⚠️ This is a free entertainment game using virtual play-money chips. There is no real money, real payment, or real withdrawal involved.</p>
+  </div>
+
+  <!-- ================= WALLET ================= -->
+  <div class="screen" id="wallet">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Wallet</h1>
+    <p class="sub">Your chips and quick actions.</p>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;">TOTAL CHIPS</div>
+      <div style="font-size:44px;font-weight:900;color:var(--gold);" id="balWallet">0</div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn alt" onclick="go('buy')">+ Add</button>
+        <button class="btn ghost" onclick="go('withdraw')">Withdraw</button>
+      </div>
+    </div>
+    <div class="section-h">Chip denominations</div>
+    <div class="card"><div class="chips-shelf" id="chipShelf"></div>
+      <p class="note">Different coloured poker chips represent different values. Tap a chip in the Buy screen to top-up.</p></div>
+    <div class="section-h">Recent activity</div>
+    <div class="card" id="historyBox"><p class="sub" style="margin:0;">No games yet. Hit Play to start!</p></div>
+  </div>
+
+  <!-- ================= BUY CHIPS ================= -->
+  <div class="screen" id="buy">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Buy Chips</h1>
+    <p class="sub">Choose an amount and a payment method. <b style="color:var(--gold)">100% demo — no real charge.</b></p>
+
+    <div class="section-h">Select chip pack</div>
+    <div class="card">
+      <div class="chips-shelf" id="buyChips"></div>
+      <label>Or enter custom amount</label>
+      <input id="buyCustom" type="number" placeholder="e.g. 2500" oninput="selBuyChip(null)"/>
+    </div>
+
+    <div class="section-h">Payment method <span style="font-size:10px;color:var(--muted)">(simulated)</span></div>
+    <div class="pay-list" id="payList"></div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="stat-row"><span>Amount</span><b id="buyAmtLabel">0 chips</b></div>
+      <div class="stat-row"><span>Method</span><b id="buyMethodLabel">—</b></div>
+      <div class="stat-row"><span>Total</span><b style="color:var(--gold)" id="buyTotalLabel">₹0.00 (demo)</b></div>
+    </div>
+    <button class="btn" id="buyBtn" onclick="doBuy()">PAY NOW (DEMO)</button>
+    <p class="note">No card, UPI, bank or crypto data is collected, stored or charged. Everything here is a simulation for the game.</p>
+  </div>
+
+
+  <!-- ================= WITHDRAW ================= -->
+  <div class="screen" id="withdraw">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Withdraw</h1>
+    <p class="sub">Convert chips back out. <b style="color:var(--gold)">Demo only — nothing real is paid.</b></p>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;">AVAILABLE</div>
+      <div style="font-size:36px;font-weight:900;color:var(--gold);" id="balWithdraw">0</div>
+      <div style="font-size:12px;color:var(--muted);">CHIPS</div>
+    </div>
+    <div class="card">
+      <label>Amount to withdraw</label>
+      <input id="wdAmount" type="number" placeholder="Enter chips"/>
+      <div class="amt-quick" id="wdQuick"></div>
+      <label>Withdraw to</label>
+      <select id="wdMethod">
+        <option value="upi">UPI (Demo)</option>
+        <option value="bank">Bank Transfer (Demo)</option>
+        <option value="wallet">Paytm / Wallet (Demo)</option>
+        <option value="crypto">Crypto Wallet (Demo)</option>
+      </select>
+      <label>Account / UPI ID / Address</label>
+      <input id="wdDest" placeholder="name@upi  •  demo only"/>
+    </div>
+    <button class="btn green" onclick="doWithdraw()">REQUEST WITHDRAWAL</button>
+    <p class="note">This simulates a withdrawal flow. No real funds are transferred. Minimum 100 chips.</p>
+  </div>
+
+  <!-- ================= PROFILE ================= -->
+  <div class="screen" id="profile">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Profile</h1>
+    <div class="card" style="text-align:center;">
+      <div class="ava" id="profAva" style="width:96px;height:96px;border-radius:50%;margin:0 auto 10px;border:3px solid var(--gold);overflow:hidden;position:relative;"></div>
+      <input id="profName" style="text-align:center;font-weight:800;font-size:18px;background:transparent;border:none;" value="Player"/>
+      <div style="font-size:11px;color:var(--muted);">Tap name to edit • Runner: <b id="profChar" style="color:var(--gold)">—</b></div>
+      <button class="btn ghost" style="margin-top:12px;" onclick="go('select')">Change Character</button>
+    </div>
+    <div class="section-h">Career stats</div>
+    <div class="card">
+      <div class="stat-row"><span>Games played</span><b id="stGames">0</b></div>
+      <div class="stat-row"><span>Best distance</span><b id="stDist">0 m</b></div>
+      <div class="stat-row"><span>Best multiplier</span><b id="stMult">1.00x</b></div>
+      <div class="stat-row"><span>Biggest win</span><b id="stWin">0</b></div>
+      <div class="stat-row"><span>Total coins grabbed</span><b id="stCoins">0</b></div>
+    </div>
+    <button class="btn danger" onclick="resetProgress()">Reset Progress</button>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div class="screen" id="settings">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Settings</h1>
+    <div class="card">
+      <div class="toggle"><div><b>Sound Effects</b><br><small style="color:var(--muted)">Coins, jumps, crashes</small></div><div class="sw on" data-set="sfx" onclick="toggleSet(this)"></div></div>
+      <div class="toggle"><div><b>Background Music</b><br><small style="color:var(--muted)">Looping beat</small></div><div class="sw on" data-set="music" onclick="toggleSet(this)"></div></div>
+      <div class="toggle"><div><b>Vibration</b><br><small style="color:var(--muted)">Haptics on mobile</small></div><div class="sw on" data-set="vibe" onclick="toggleSet(this)"></div></div>
+      <div class="toggle"><div><b>Show control hints</b><br><small style="color:var(--muted)">On-screen guidance</small></div><div class="sw on" data-set="hints" onclick="toggleSet(this)"></div></div>
+    </div>
+    <div class="section-h">Graphics</div>
+    <div class="card">
+      <label>Quality</label>
+      <select id="setQuality" onchange="saveQuality()">
+        <option value="high">High (more scenery &amp; effects)</option>
+        <option value="medium" selected>Medium (balanced)</option>
+        <option value="low">Low (best performance)</option>
+      </select>
+      <label>Difficulty</label>
+      <select id="setDiff" onchange="saveDiff()">
+        <option value="easy">Easy — slower, fewer obstacles</option>
+        <option value="normal" selected>Normal</option>
+        <option value="hard">Hard — fast &amp; crowded</option>
+        <option value="insane">Insane — chaos mode</option>
+      </select>
+    </div>
+    <button class="btn ghost" onclick="go('contact')">Contact / About</button>
+  </div>
+
+  <!-- ================= FEEDBACK ================= -->
+  <div class="screen" id="feedback">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Feedback</h1>
+    <p class="sub">We'd love to hear how to make the dash better.</p>
+    <div class="card">
+      <label>How was your experience?</label>
+      <div class="grid3" id="rateRow" style="margin-bottom:6px;">
+        <button class="btn ghost" onclick="setRate(1,this)">😞</button>
+        <button class="btn ghost" onclick="setRate(2,this)">😐</button>
+        <button class="btn ghost" onclick="setRate(3,this)">🤩</button>
+      </div>
+      <label>Your message</label>
+      <textarea id="fbMsg" rows="5" placeholder="Ideas, bugs, new characters..."></textarea>
+      <label>Email (optional)</label>
+      <input id="fbEmail" placeholder="you@example.com"/>
+    </div>
+    <button class="btn" onclick="sendFeedback()">SEND FEEDBACK</button>
+  </div>
+
+  <!-- ================= CONTACT ================= -->
+  <div class="screen" id="contact">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Contact Us</h1>
+    <p class="sub">Reach the Desi Dash studio (demo details).</p>
+    <div class="card">
+      <div class="stat-row"><span>📧 Email</span><b>support@desidash.demo</b></div>
+      <div class="stat-row"><span>📞 Phone</span><b>+91 90000 00000</b></div>
+      <div class="stat-row"><span>🏢 Studio</span><b>Mumbai, India</b></div>
+      <div class="stat-row"><span>🌐 Web</span><b>desidash.demo</b></div>
+      <div class="stat-row"><span>🕘 Hours</span><b>Mon–Sat, 10–7</b></div>
+    </div>
+    <div class="section-h">Quick message</div>
+    <div class="card">
+      <label>Name</label><input id="ctName" placeholder="Your name"/>
+      <label>Subject</label><input id="ctSub" placeholder="What's it about?"/>
+      <label>Message</label><textarea id="ctMsg" rows="4" placeholder="Type here..."></textarea>
+    </div>
+    <button class="btn" onclick="sendContact()">SEND MESSAGE</button>
+    <p class="note">Desi Dash is an offline entertainment game. All contact details above are placeholders for the demo.</p>
+  </div>
+
+
+  <!-- ================= CHARACTER SELECT ================= -->
+  <div class="screen" id="select">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Choose Runner</h1>
+    <p class="sub">Indian model theme — each runner has a unique vibe.</p>
+    <div class="char-row" id="charRow"></div>
+    <div class="card">
+      <div class="stat-row"><span>Selected</span><b id="selCharName" style="color:var(--gold)">—</b></div>
+      <div class="stat-row"><span>Style</span><b id="selCharStyle">—</b></div>
+    </div>
+    <button class="btn green" onclick="go('bet')">CONTINUE TO BET ▶</button>
+  </div>
+
+  <!-- ================= BET ================= -->
+  <div class="screen" id="bet">
+    <span class="back" onclick="go('home')">‹ Back</span>
+    <h1 class="title">Place Your Bet</h1>
+    <p class="sub">Coins multiply this amount. Cash out before you crash!</p>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;">BALANCE</div>
+      <div style="font-size:22px;font-weight:900;color:var(--gold);" id="balBet">0</div>
+      <div class="hr"></div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;">BET AMOUNT</div>
+      <div class="bet-display" id="betDisplay">100</div>
+      <div class="amt-quick" id="betQuick"></div>
+      <input id="betCustom" type="number" placeholder="Custom bet" style="margin-top:10px;" oninput="setBet(parseInt(this.value)||0)"/>
+    </div>
+    <div class="card">
+      <div class="stat-row"><span>Runner</span><b id="betChar" style="color:var(--gold)">—</b></div>
+      <div class="stat-row"><span>Potential at 2.0x</span><b class="badge-win" id="betPot">200</b></div>
+    </div>
+    <button class="btn green" onclick="startRun()">🚀 START RUN</button>
+    <p class="note">Controls: ← → swipe / arrow keys to switch lanes • ↑ or swipe up to jump • ↓ or swipe down to roll.</p>
+  </div>
+
+  <!-- ================= GAME ================= -->
+  <div class="screen full" id="game">
+    <canvas id="gameCanvas"></canvas>
+    <div class="hud" id="hudTop">
+      <div class="hud-pill"><div class="k">DISTANCE</div><div class="v"><span id="hudDist">0</span>m</div></div>
+      <div class="hud-pill" id="multBox"><div class="k">MULTIPLIER</div><div class="v"><span id="hudMult">1.00</span>x</div></div>
+      <div class="hud-pill"><div class="k">CASH-OUT</div><div class="v" style="color:var(--gold)"><span id="hudCash">0</span></div></div>
+    </div>
+    <div class="ctrl-hint" id="ctrlHint">← → lanes · ↑ jump · ↓ roll</div>
+    <div id="cashWrap">
+      <button class="btn green" onclick="cashOut()">💰 CASH OUT <span id="cashBtnAmt">0</span></button>
+    </div>
+  </div>
+
+  <!-- ================= BOTTOM NAV ================= -->
+  <div id="bottomNav">
+    <div class="nav-i active" data-nav="home" onclick="go('home')"><div class="ni">🏠</div>Home</div>
+    <div class="nav-i" data-nav="buy" onclick="go('buy')"><div class="ni">🪙</div>Chips</div>
+    <div class="nav-i" data-nav="bet" onclick="go('bet')"><div class="ni">🎮</div>Play</div>
+    <div class="nav-i" data-nav="withdraw" onclick="go('withdraw')"><div class="ni">🏦</div>Cash</div>
+    <div class="nav-i" data-nav="profile" onclick="go('profile')"><div class="ni">👤</div>Me</div>
+  </div>
+
+  <!-- ================= OVERLAY MODAL ================= -->
+  <div id="overlay"><div class="modal" id="modalBox"></div></div>
+  <div id="toast"></div>
+
+  </div><!-- /#app -->
+
+
+<script>
+/* ============================================================
+   STATE & PERSISTENCE
+   ============================================================ */
+const SAVE_KEY = 'desidash_save_v1';
+const DEFAULT_STATE = {
+  balance: 1000,
+  name: 'Player',
+  selectedChar: 'arjun',
+  unlocked: ['arjun','priya','raj','anaya'],
+  stats: { games:0, bestDist:0, bestMult:1, bigWin:0, totalCoins:0 },
+  settings: { sfx:true, music:true, vibe:true, hints:true, quality:'medium', difficulty:'normal' },
+  history: [],
+  lastFree: null
+};
+let S = load();
+function load(){
+  try{ const r = JSON.parse(localStorage.getItem(SAVE_KEY)); if(r) return Object.assign(JSON.parse(JSON.stringify(DEFAULT_STATE)), r, {settings:Object.assign({},DEFAULT_STATE.settings,r.settings||{}), stats:Object.assign({},DEFAULT_STATE.stats,r.stats||{})}); }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ============================================================
+   DATA
+   ============================================================ */
+const CHARS = [
+  {id:'arjun',  name:'Arjun',  style:'Street Runner',   emoji:'🏃🏽‍♂️', c1:'#ff7a00', c2:'#1f8fff', skin:'#c9a06a', cost:0},
+  {id:'priya',  name:'Priya',  style:'Festival Glam',   emoji:'🏃🏽‍♀️', c1:'#ff2bd6', c2:'#ffcb3d', skin:'#d8ac78', cost:0},
+  {id:'raj',    name:'Raj',    style:'Cricket Hero',    emoji:'🏏',     c1:'#23e08a', c2:'#eaeaea', skin:'#c79a64', cost:0},
+  {id:'anaya',  name:'Anaya',  style:'Neon Diva',       emoji:'💃🏽',   c1:'#00e5ff', c2:'#9b4dff', skin:'#d8ac78', cost:0},
+  {id:'vikram', name:'Vikram', style:'Royal Maharaja',  emoji:'🤴🏽',   c1:'#ffcb3d', c2:'#a3123a', skin:'#b9854f', cost:2500},
+  {id:'meera',  name:'Meera',  style:'Classical Dancer',emoji:'🙆🏽‍♀️', c1:'#ff4d6d', c2:'#ffcb3d', skin:'#d8ac78', cost:2500},
+];
+const CHIPS = [
+  {v:100,   cls:'pc-red',    label:'100'},
+  {v:500,   cls:'pc-blue',   label:'500'},
+  {v:1000,  cls:'pc-green',  label:'1K'},
+  {v:5000,  cls:'pc-gold',   label:'5K'},
+  {v:10000, cls:'pc-purple', label:'10K'},
+  {v:25000, cls:'pc-black',  label:'25K'},
+];
+const PAYS = [
+  {id:'upi',     name:'UPI',                 sub:'GPay · PhonePe · BHIM',  ic:'UPI'},
+  {id:'card',    name:'Credit / Debit Card', sub:'Visa · Mastercard · RuPay', ic:'💳'},
+  {id:'netbank', name:'Net Banking',         sub:'All major banks',        ic:'🏦'},
+  {id:'paytm',   name:'Paytm Wallet',        sub:'Instant top-up',         ic:'📲'},
+  {id:'phonepe', name:'PhonePe',             sub:'UPI wallet',             ic:'🟣'},
+  {id:'crypto',  name:'Crypto',              sub:'USDT · BTC (demo)',      ic:'₿'},
+];
+
+/* ============================================================
+   HELPERS  (toast / modal / format)
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('en-IN');
+let toastTimer;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function modal(html){ $('modalBox').innerHTML=html; $('overlay').classList.add('show'); }
+function closeModal(){ $('overlay').classList.remove('show'); }
+function buzz(ms){ if(S.settings.vibe && navigator.vibrate) navigator.vibrate(ms); }
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+let current='home';
+function go(screen){
+  if(current==='game' && screen!=='game'){ stopGame(); }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=$(screen); if(el) el.classList.add('active');
+  current=screen;
+  document.querySelectorAll('.nav-i').forEach(n=>n.classList.toggle('active', n.dataset.nav===screen));
+  const inGame = screen==='game';
+  $('topbar').style.display = inGame ? 'none':'flex';
+  $('bottomNav').classList.toggle('hide', inGame);
+  // per-screen refresh
+  if(screen==='home') renderHome();
+  if(screen==='wallet') renderWallet();
+  if(screen==='buy') renderBuy();
+  if(screen==='withdraw') renderWithdraw();
+  if(screen==='profile') renderProfile();
+  if(screen==='select') renderSelect();
+  if(screen==='bet') renderBet();
+  if(screen==='settings') renderSettings();
+  el && (el.scrollTop=0);
+  refreshBalances();
+}
+function refreshBalances(){
+  ['balTop','balHome','balWallet','balWithdraw','balBet'].forEach(id=>{ if($(id)) $(id).textContent=fmt(S.balance); });
+}
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function renderHome(){
+  refreshBalances();
+  const today=new Date().toDateString();
+  $('freeBonusCard').style.display = (S.lastFree!==today) ? 'block':'none';
+}
+function claimFree(){
+  const today=new Date().toDateString();
+  if(S.lastFree===today){ toast('Already claimed today'); return; }
+  S.balance+=500; S.lastFree=today; save(); refreshBalances(); renderHome();
+  sfx('cash'); toast('🎁 +500 free chips added!');
+}
+
+/* ============================================================
+   WALLET
+   ============================================================ */
+function renderWallet(){
+  refreshBalances();
+  $('chipShelf').innerHTML = CHIPS.map(c=>`<div class="poker-chip ${c.cls}">${c.label}</div>`).join('');
+  const h=$('historyBox');
+  if(!S.history.length){ h.innerHTML='<p class="sub" style="margin:0;">No games yet. Hit Play to start!</p>'; return; }
+  h.innerHTML = S.history.slice(0,12).map(it=>{
+    const win=it.result==='win';
+    return `<div class="history-item"><span>${win?'💰':'💥'} ${it.label}</span>
+      <b class="${win?'badge-win':'badge-loss'}">${win?'+':'−'}${fmt(it.amount)}</b></div>`;
+  }).join('');
+}
+function pushHistory(result, amount, label){
+  S.history.unshift({result, amount, label, t:Date.now()});
+  S.history=S.history.slice(0,40); save();
+}
+
+/* ============================================================
+   BUY CHIPS  (demo payments)
+   ============================================================ */
+let buyAmt=500, buyMethod='upi';
+function renderBuy(){
+  $('buyChips').innerHTML = CHIPS.map(c=>
+    `<div class="poker-chip ${c.cls}" onclick="selBuyChip(${c.v},this)">${c.label}</div>`).join('');
+  $('payList').innerHTML = PAYS.map(p=>
+    `<div class="pay ${p.id===buyMethod?'sel':''}" data-pid="${p.id}" onclick="selPay('${p.id}',this)">
+       <div class="pic">${p.ic}</div><div><b>${p.name}</b><small>${p.sub}</small></div></div>`).join('');
+  selBuyChip(buyAmt);
+}
+function selBuyChip(v, el){
+  if(v!==null){ buyAmt=v; $('buyCustom').value=''; }
+  else { buyAmt=parseInt($('buyCustom').value)||0; }
+  document.querySelectorAll('#buyChips .poker-chip').forEach(c=>c.style.outline='');
+  if(el) el.style.outline='3px solid #fff';
+  updateBuyLabels();
+}
+function selPay(id, el){
+  buyMethod=id;
+  document.querySelectorAll('#payList .pay').forEach(p=>p.classList.toggle('sel', p.dataset.pid===id));
+  updateBuyLabels();
+}
+function updateBuyLabels(){
+  const p=PAYS.find(x=>x.id===buyMethod);
+  $('buyAmtLabel').textContent=fmt(buyAmt)+' chips';
+  $('buyMethodLabel').textContent=p?p.name:'—';
+  $('buyTotalLabel').textContent='₹'+fmt(buyAmt)+'.00 (demo)';
+  $('buyBtn').disabled = !(buyAmt>0);
+}
+function doBuy(){
+  if(buyAmt<=0){ toast('Enter an amount'); return; }
+  const p=PAYS.find(x=>x.id===buyMethod);
+  modal(`<div class="big">${p.ic}</div><h2>${p.name}</h2>
+    <p>Processing demo payment of <b style="color:var(--gold)">₹${fmt(buyAmt)}</b>…</p>
+    <div style="font-size:34px;margin:6px 0;">⏳</div>
+    <p class="note" style="margin:0">No real money is charged.</p>`);
+  setTimeout(()=>{
+    S.balance+=buyAmt; save(); refreshBalances(); sfx('cash');
+    modal(`<div class="big">✅</div><h2>Payment Successful</h2>
+      <div class="win-amt">+${fmt(buyAmt)} chips</div>
+      <p>Added to your wallet via ${p.name} (demo).</p>
+      <button class="btn" onclick="closeModal();go('home')">Awesome</button>`);
+  }, 1400);
+}
+
+/* ============================================================
+   WITHDRAW  (demo)
+   ============================================================ */
+function renderWithdraw(){
+  refreshBalances();
+  const q=[100,500,1000,'MAX'];
+  $('wdQuick').innerHTML=q.map(v=>`<button onclick="wdQuick('${v}')">${v==='MAX'?'MAX':fmt(v)}</button>`).join('');
+}
+function wdQuick(v){
+  $('wdAmount').value = v==='MAX' ? Math.floor(S.balance) : v;
+}
+function doWithdraw(){
+  const amt=parseInt($('wdAmount').value)||0;
+  const dest=$('wdDest').value.trim();
+  const method=$('wdMethod').value;
+  if(amt<100){ toast('Minimum withdrawal is 100 chips'); return; }
+  if(amt>S.balance){ toast('Not enough chips'); return; }
+  if(!dest){ toast('Enter a destination ID/account'); return; }
+  modal(`<div class="big">🏦</div><h2>Processing</h2>
+    <p>Requesting withdrawal of <b style="color:var(--gold)">${fmt(amt)}</b> chips via ${method.toUpperCase()}…</p>
+    <div style="font-size:34px;">⏳</div>`);
+  setTimeout(()=>{
+    S.balance-=amt; pushHistory('loss',amt,'Withdrawal'); save(); refreshBalances(); sfx('cash');
+    modal(`<div class="big">✅</div><h2>Withdrawal Requested</h2>
+      <div class="win-amt">${fmt(amt)} chips</div>
+      <p>Demo payout to <b>${dest}</b> is being "processed". No real funds move.</p>
+      <button class="btn" onclick="closeModal();go('home')">Done</button>`);
+    $('wdAmount').value=''; $('wdDest').value='';
+  },1500);
+}
+
+/* ============================================================
+   PROFILE / SETTINGS / FEEDBACK / CONTACT
+   ============================================================ */
+function charById(id){ return CHARS.find(c=>c.id===id)||CHARS[0]; }
+function avatarStyle(c){ return `background:radial-gradient(circle at 35% 30%, ${c.c1}, ${c.c2});display:flex;align-items:center;justify-content:center;font-size:42px;`; }
+function renderProfile(){
+  const c=charById(S.selectedChar);
+  $('profAva').setAttribute('style', $('profAva').getAttribute('style').replace(/background[^;]*;?/,'')+';'+avatarStyle(c));
+  $('profAva').innerHTML=`<span>${c.emoji}</span>`;
+  $('profName').value=S.name;
+  $('profChar').textContent=c.name;
+  $('stGames').textContent=fmt(S.stats.games);
+  $('stDist').textContent=fmt(S.stats.bestDist)+' m';
+  $('stMult').textContent=S.stats.bestMult.toFixed(2)+'x';
+  $('stWin').textContent=fmt(S.stats.bigWin);
+  $('stCoins').textContent=fmt(S.stats.totalCoins);
+}
+document.addEventListener('input',e=>{ if(e.target.id==='profName'){ S.name=e.target.value||'Player'; save(); }});
+function resetProgress(){
+  modal(`<div class="big">⚠️</div><h2>Reset everything?</h2><p>This clears chips, stats and history.</p>
+   <div class="btn-row"><button class="btn ghost" onclick="closeModal()">Cancel</button>
+   <button class="btn danger" onclick="S=JSON.parse(JSON.stringify(DEFAULT_STATE));save();closeModal();go('home');toast('Progress reset')">Reset</button></div>`);
+}
+function renderSettings(){
+  document.querySelectorAll('.sw[data-set]').forEach(sw=>sw.classList.toggle('on', !!S.settings[sw.dataset.set]));
+  $('setQuality').value=S.settings.quality;
+  $('setDiff').value=S.settings.difficulty;
+}
+function toggleSet(el){ const k=el.dataset.set; S.settings[k]=!S.settings[k]; el.classList.toggle('on',S.settings[k]); save(); }
+function saveQuality(){ S.settings.quality=$('setQuality').value; save(); }
+function saveDiff(){ S.settings.difficulty=$('setDiff').value; save(); toast('Difficulty: '+S.settings.difficulty); }
+let fbRate=0;
+function setRate(n,el){ fbRate=n; document.querySelectorAll('#rateRow .btn').forEach(b=>b.style.borderColor=''); el.style.borderColor='var(--gold)'; }
+function sendFeedback(){
+  const m=$('fbMsg').value.trim();
+  if(!m && !fbRate){ toast('Add a rating or message'); return; }
+  modal(`<div class="big">💛</div><h2>Thank you!</h2><p>Your feedback helps Desi Dash get better.</p>
+    <button class="btn" onclick="closeModal();go('home')">Close</button>`);
+  $('fbMsg').value=''; $('fbEmail').value=''; fbRate=0;
+  document.querySelectorAll('#rateRow .btn').forEach(b=>b.style.borderColor='');
+}
+function sendContact(){
+  if(!$('ctMsg').value.trim()){ toast('Write a message first'); return; }
+  modal(`<div class="big">📨</div><h2>Message Sent</h2><p>We'll get back to you (demo).</p>
+    <button class="btn" onclick="closeModal();go('home')">Close</button>`);
+  $('ctName').value='';$('ctSub').value='';$('ctMsg').value='';
+}
+
+/* ============================================================
+   CHARACTER SELECT
+   ============================================================ */
+function renderSelect(){
+  $('charRow').innerHTML = CHARS.map(c=>{
+    const unlocked=S.unlocked.includes(c.id);
+    const sel=S.selectedChar===c.id;
+    return `<div class="char ${sel?'sel':''} ${unlocked?'':'locked'}" onclick="pickChar('${c.id}')">
+      <div class="ava" style="${avatarStyle(c)}"><span>${c.emoji}</span></div>
+      <b>${c.name}</b><small>${c.style}</small>
+      <div style="margin-top:6px;font-size:11px;color:${unlocked?'var(--green)':'var(--gold)'}">${unlocked?(sel?'Selected':'Tap to use'):('🔒 '+fmt(c.cost))}</div>
+    </div>`;
+  }).join('');
+  const c=charById(S.selectedChar);
+  $('selCharName').textContent=c.name; $('selCharStyle').textContent=c.style;
+}
+function pickChar(id){
+  const c=charById(id);
+  if(!S.unlocked.includes(id)){
+    if(S.balance>=c.cost){
+      modal(`<div class="big">${c.emoji}</div><h2>Unlock ${c.name}?</h2><p>Cost: <b style="color:var(--gold)">${fmt(c.cost)}</b> chips</p>
+       <div class="btn-row"><button class="btn ghost" onclick="closeModal()">Cancel</button>
+       <button class="btn" onclick="confirmUnlock('${id}')">Unlock</button></div>`);
+    } else { toast('Need '+fmt(c.cost)+' chips to unlock'); }
+    return;
+  }
+  S.selectedChar=id; save(); renderSelect(); sfx('coin');
+}
+function confirmUnlock(id){
+  const c=charById(id);
+  S.balance-=c.cost; S.unlocked.push(id); S.selectedChar=id; save();
+  closeModal(); refreshBalances(); renderSelect(); toast(c.name+' unlocked!');
+}
+
+/* ============================================================
+   BET
+   ============================================================ */
+let betAmount=100;
+function renderBet(){
+  refreshBalances();
+  if(betAmount>S.balance) betAmount=Math.max(10,Math.floor(S.balance));
+  const quick=[50,100,250,500,1000];
+  $('betQuick').innerHTML=quick.map(v=>`<button onclick="setBet(${v})">${fmt(v)}</button>`).join('');
+  $('betChar').textContent=charById(S.selectedChar).name;
+  setBet(betAmount);
+}
+function setBet(v){
+  betAmount=Math.max(0,Math.floor(v||0));
+  $('betDisplay').textContent=fmt(betAmount);
+  $('betPot').textContent=fmt(betAmount*2);
+  document.querySelectorAll('#betQuick button').forEach(b=>b.classList.toggle('sel', parseInt(b.textContent.replace(/,/g,''))===betAmount));
+}
+
+/* ============================================================
+   AUDIO (lightweight WebAudio SFX + music)
+   ============================================================ */
+let AC, musicNode, musicGain, musicTimer;
+function audioCtx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function sfx(type){
+  if(!S.settings.sfx) return; const ac=audioCtx(); if(!ac) return;
+  const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination);
+  const t=ac.currentTime;
+  if(type==='coin'){ o.type='triangle'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1480,t+.08); g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.start(t);o.stop(t+.2);}
+  else if(type==='jump'){ o.type='sine'; o.frequency.setValueAtTime(320,t); o.frequency.exponentialRampToValueAtTime(720,t+.18); g.gain.setValueAtTime(.16,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.start(t);o.stop(t+.24);}
+  else if(type==='roll'){ o.type='sawtooth'; o.frequency.setValueAtTime(420,t); o.frequency.exponentialRampToValueAtTime(160,t+.18); g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.0001,t+.2); o.start(t);o.stop(t+.22);}
+  else if(type==='crash'){ const b=ac.createBufferSource(); const buf=ac.createBuffer(1,ac.sampleRate*.4,ac.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2); b.buffer=buf; const bg=ac.createGain(); bg.gain.value=.35; b.connect(bg);bg.connect(ac.destination); b.start(); o.type='square'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(60,t+.3); g.gain.setValueAtTime(.2,t); g.gain.exponentialRampToValueAtTime(.0001,t+.35); o.start(t);o.stop(t+.36);}
+  else if(type==='cash'){ [523,659,784,1046].forEach((f,i)=>{ const oo=ac.createOscillator(),gg=ac.createGain(); oo.connect(gg);gg.connect(ac.destination); oo.type='triangle'; oo.frequency.value=f; gg.gain.setValueAtTime(.0001,t+i*.07); gg.gain.linearRampToValueAtTime(.18,t+i*.07+.02); gg.gain.exponentialRampToValueAtTime(.0001,t+i*.07+.3); oo.start(t+i*.07);oo.stop(t+i*.07+.32);}); }
+}
+function startMusic(){
+  if(!S.settings.music) return; const ac=audioCtx(); if(!ac||musicTimer) return;
+  musicGain=ac.createGain(); musicGain.gain.value=.05; musicGain.connect(ac.destination);
+  const scale=[196,220,247,294,330,392]; let i=0;
+  musicTimer=setInterval(()=>{ if(!S.settings.music){return;} const o=ac.createOscillator(),g=ac.createGain(); o.connect(g);g.connect(musicGain); o.type='sine'; o.frequency.value=scale[i%scale.length]*(i%6===0?1:2); const t=ac.currentTime; g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.5,t+.03); g.gain.exponentialRampToValueAtTime(.0001,t+.28); o.start(t);o.stop(t+.3); i++; },240);
+}
+function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } }
+</script>
+
+
+<script>
+/* ============================================================
+   3D-STYLE ENDLESS RUNNER ENGINE
+   ============================================================ */
+const cv=$('gameCanvas');
+let ctx, W=360, H=640, dpr=1;
+const LANE_X=[-1.0,0,1.0];
+const camZ=-3.2, camY=1.55, focal=1.0;
+const FAR=92;
+const G=23, JUMP_V=7.6, ROLL_TIME=0.62, COIN_REACH=0.5;
+let running=false, raf=null, lastT=0;
+let RUN=null;
+
+const OBST={
+ hurdle:  {topH:0.55, underH:0,   w:0.9, h:0.5, col:'#ff7a00', top:'#ffb15e', label:'🚧', depth:0.5},
+ gate:    {topH:99,   underH:0.95,w:1.05,h:1.45,col:'#ff2bd6', top:'#ff8ae6', label:'⛩️', depth:0.5, overhead:true},
+ rickshaw:{topH:1.05, underH:0,   w:0.92,h:1.05,col:'#ffd23d', top:'#fff0a0', label:'🛺', depth:0.95},
+ cow:     {topH:1.05, underH:0,   w:0.92,h:1.0, col:'#cdb089', top:'#e8d3b0', label:'🐄', depth:0.95},
+ cart:    {topH:99,   underH:0,   w:0.95,h:1.2, col:'#8a5a2b', top:'#b07a3e', label:'🛒', depth:0.8},
+ barrier: {topH:99,   underH:0,   w:1.02,h:1.3, col:'#9aa0aa', top:'#c4c9d2', label:'🚧', depth:0.6},
+ train:   {topH:99,   underH:0,   w:1.02,h:1.6, col:'#1f8fff', top:'#7ec0ff', label:'🚆', depth:3.4},
+};
+const PASSABLE=['hurdle','gate','rickshaw','cow'];
+const COIN_VALS=[1.05,1.05,1.1,1.1,1.1,1.15,1.15,1.2,1.2,1.3,1.5];
+
+function project(x,y,z){
+  const dz=z-camZ; if(dz<=0.08) return null;
+  const sc=focal/dz, PS=H*0.5;
+  return { x: W/2 + x*sc*PS, y: H*0.5 - (y-camY)*sc*PS, s: sc*PS };
+}
+function resizeCanvas(){
+  const r=cv.getBoundingClientRect();
+  dpr=Math.min(2, window.devicePixelRatio||1);
+  W=Math.max(280, r.width||cv.clientWidth||360);
+  H=Math.max(360, r.height||cv.clientHeight||640);
+  cv.width=Math.floor(W*dpr); cv.height=Math.floor(H*dpr);
+  ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',()=>{ if(current==='game') resizeCanvas(); });
+
+function diffParams(){
+  switch(S.settings.difficulty){
+    case 'easy':   return {base:13, gap:11, grow:0.010};
+    case 'hard':   return {base:23, gap:7,  grow:0.014};
+    case 'insane': return {base:29, gap:5.5,grow:0.018};
+    default:       return {base:18, gap:8.5,grow:0.012};
+  }
+}
+
+/* ---------- run lifecycle ---------- */
+function startRun(){
+  if(betAmount<=0){ toast('Set a bet amount'); return; }
+  if(betAmount>S.balance){ toast('Not enough chips — buy more!'); return; }
+  S.balance-=betAmount; save();
+  go('game'); resizeCanvas();
+  const dp=diffParams();
+  RUN={
+    dist:0, worldZ:0, speed:dp.base, base:dp.base, grow:dp.grow, gap:dp.gap,
+    mult:1, coins:0, over:false, spawnAcc:dp.gap, t:0,
+    player:{lane:1, x:0, y:0, vy:0, onGround:true, rolling:false, rollT:0, anim:0},
+    objs:[], parts:[]
+  };
+  $('ctrlHint').style.display = S.settings.hints ? 'block':'none';
+  if(S.settings.hints) setTimeout(()=>{ if($('ctrlHint')) $('ctrlHint').style.display='none'; },3500);
+  updateHUD();
+  running=true; lastT=performance.now();
+  startMusic();
+  if(raf) cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(loop);
+}
+function stopGame(){ running=false; if(raf){ cancelAnimationFrame(raf); raf=null; } stopMusic(); }
+
+function endRun(win){
+  if(RUN.over) return; RUN.over=true; running=false; stopMusic();
+  const dist=Math.floor(RUN.dist);
+  S.stats.games++; 
+  S.stats.bestDist=Math.max(S.stats.bestDist,dist);
+  S.stats.bestMult=Math.max(S.stats.bestMult,RUN.mult);
+  S.stats.totalCoins+=RUN.coins;
+  const label=`${charById(S.selectedChar).name} · ${dist}m · ${RUN.mult.toFixed(2)}x`;
+  if(win){
+    const amt=Math.floor(betAmount*RUN.mult);
+    const net=amt-betAmount;
+    S.balance+=amt; S.stats.bigWin=Math.max(S.stats.bigWin,net);
+    pushHistory('win', net, label); save(); refreshBalances(); sfx('cash');
+    modal(`<div class="big">💰</div><h2>Cashed Out!</h2>
+      <div class="win-amt">+${fmt(amt)} chips</div>
+      <p>Bet ${fmt(betAmount)} × <b style="color:var(--green)">${RUN.mult.toFixed(2)}x</b> · ${dist}m · ${RUN.coins} coins</p>
+      <div class="btn-row"><button class="btn ghost" onclick="closeModal();go('home')">Home</button>
+      <button class="btn green" onclick="closeModal();go('bet')">Play Again</button></div>`);
+  } else {
+    pushHistory('loss', betAmount, label); save(); refreshBalances(); sfx('crash'); buzz([40,40,80]);
+    modal(`<div class="big">💥</div><h2>Crashed!</h2>
+      <p>You lost your bet of <b style="color:var(--red)">${fmt(betAmount)}</b> chips at <b>${RUN.mult.toFixed(2)}x</b>.<br>Cash out earlier next time!</p>
+      <div class="win-amt" style="color:var(--red)">−${fmt(betAmount)}</div>
+      <div class="btn-row"><button class="btn ghost" onclick="closeModal();go('home')">Home</button>
+      <button class="btn" onclick="closeModal();go('bet')">Retry</button></div>`);
+  }
+}
+function cashOut(){ if(running && RUN && !RUN.over) endRun(true); }
+
+/* ---------- spawning ---------- */
+function spawnRow(){
+  const P=RUN.player;
+  const r=Math.random();
+  let n = r<0.18?0 : r<0.55?1 : r<0.85?2 : 3;
+  const lanes=[0,1,2].sort(()=>Math.random()-0.5);
+  const used={};
+  const keys=Object.keys(OBST);
+  for(let i=0;i<n;i++){
+    const lane=lanes[i];
+    let type=keys[Math.floor(Math.random()*keys.length)];
+    used[lane]=type;
+    RUN.objs.push(makeObst(lane,type,FAR));
+  }
+  // guarantee a survivable path: not all 3 lanes non-passable
+  const occ=Object.keys(used);
+  if(occ.length===3 && occ.every(l=>!PASSABLE.includes(used[l]))){
+    const lane=occ[Math.floor(Math.random()*3)];
+    RUN.objs=RUN.objs.filter(o=>!(o.kind==='obst'&&o.lane==lane&&o.z===FAR));
+    RUN.objs.push(makeObst(lane,'hurdle',FAR));
+    used[lane]='hurdle';
+  }
+  // coins
+  if(Math.random()<0.78){
+    let free=[0,1,2].filter(l=>!(l in used));
+    let lane = free.length? free[Math.floor(Math.random()*free.length)] : Math.floor(Math.random()*3);
+    const elevated = used[lane]==='hurdle' || Math.random()<0.25;
+    const cy = elevated?1.1:0.55;
+    const cnt = 3+Math.floor(Math.random()*4);
+    let val = COIN_VALS[Math.floor(Math.random()*COIN_VALS.length)];
+    const gold = Math.random()<0.06;
+    for(let k=0;k<cnt;k++){
+      RUN.objs.push({kind:'coin', lane, x:LANE_X[lane], y:cy, z:FAR+0.5+k*1.5,
+        val: gold&&k===Math.floor(cnt/2)?2.0:val, gold:gold&&k===Math.floor(cnt/2), spin:Math.random()*6, collected:false});
+    }
+  }
+}
+function makeObst(lane,type,z){
+  return {kind:'obst', type, lane, x:LANE_X[lane], z, def:OBST[type]};
+}
+
+/* ---------- input ---------- */
+function moveLane(d){ if(!running||RUN.over) return; const p=RUN.player; p.lane=Math.max(0,Math.min(2,p.lane+d)); }
+function jump(){ if(!running||RUN.over) return; const p=RUN.player; if(p.onGround&&!p.rolling){ p.vy=JUMP_V; p.onGround=false; sfx('jump'); } }
+function roll(){ if(!running||RUN.over) return; const p=RUN.player; if(p.onGround&&!p.rolling){ p.rolling=true; p.rollT=ROLL_TIME; sfx('roll'); } else if(!p.onGround){ p.vy=-JUMP_V*1.1; } }
+window.addEventListener('keydown',e=>{
+  if(current!=='game') return;
+  const k=e.key;
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(k)) e.preventDefault();
+  if(k==='ArrowLeft'||k==='a') moveLane(-1);
+  else if(k==='ArrowRight'||k==='d') moveLane(1);
+  else if(k==='ArrowUp'||k==='w'||k===' ') jump();
+  else if(k==='ArrowDown'||k==='s') roll();
+});
+let tsx=0,tsy=0,tst=0;
+cv.addEventListener('touchstart',e=>{ const t=e.changedTouches[0]; tsx=t.clientX;tsy=t.clientY;tst=Date.now(); },{passive:true});
+cv.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+cv.addEventListener('touchend',e=>{
+  const t=e.changedTouches[0]; const dx=t.clientX-tsx, dy=t.clientY-tsy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<24){ jump(); return; }
+  if(Math.abs(dx)>Math.abs(dy)){ moveLane(dx>0?1:-1); }
+  else { dy<0?jump():roll(); }
+},{passive:true});
+// mouse swipe (desktop)
+let msx=0,msy=0,mdown=false;
+cv.addEventListener('mousedown',e=>{ msx=e.clientX;msy=e.clientY;mdown=true; });
+cv.addEventListener('mouseup',e=>{ if(!mdown)return; mdown=false; const dx=e.clientX-msx,dy=e.clientY-msy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<24){ jump(); return; }
+  if(Math.abs(dx)>Math.abs(dy)) moveLane(dx>0?1:-1); else dy<0?jump():roll(); });
+
+/* ---------- update ---------- */
+function update(dt){
+  const p=RUN.player;
+  RUN.t+=dt;
+  RUN.speed=Math.min(RUN.base*1.9, RUN.base + RUN.dist*RUN.grow);
+  const move=RUN.speed*dt;
+  RUN.dist+=move; RUN.worldZ+=move;
+
+  // player lane lerp
+  const tx=LANE_X[p.lane];
+  p.x += (tx-p.x)*Math.min(1,dt*13);
+  // vertical
+  if(!p.onGround){ p.vy-=G*dt; p.y+=p.vy*dt; if(p.y<=0){ p.y=0; p.vy=0; p.onGround=true; } }
+  if(p.rolling){ p.rollT-=dt; if(p.rollT<=0) p.rolling=false; }
+  if(p.onGround) p.anim+=move*0.85;
+
+  // spawn
+  RUN.spawnAcc+=move;
+  while(RUN.spawnAcc>=RUN.gap){ RUN.spawnAcc-=RUN.gap; spawnRow(); }
+
+  // move objects + collisions
+  const headH = p.y + (p.rolling?0.5:1.05);
+  const bodyC = p.y + (p.rolling?0.25:0.5);
+  for(const o of RUN.objs){
+    const prev=o.z; o.z-=move;
+    if(o.kind==='coin'){ o.spin+=dt*7;
+      if(prev>0 && o.z<=0 && !o.collected && o.lane===p.lane){
+        if(Math.abs(o.y-bodyC)<=COIN_REACH){ collectCoin(o); }
+      }
+    } else {
+      if(prev>0 && o.z<=0 && o.lane===p.lane){
+        const d=o.def;
+        const jumpedOver = p.y>=d.topH;
+        const rolledUnder = d.underH>0 && headH<=d.underH;
+        if(!jumpedOver && !rolledUnder){ crashFx(o); endRun(false); }
+      }
+    }
+  }
+  // cull
+  RUN.objs=RUN.objs.filter(o=> o.z>camZ+0.15 && !(o.kind==='coin'&&o.collected));
+  // particles
+  for(const pt of RUN.parts){ pt.life-=dt; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy-=14*dt; }
+  RUN.parts=RUN.parts.filter(pt=>pt.life>0);
+  updateHUD();
+}
+function collectCoin(o){
+  o.collected=true; RUN.mult*=o.val; RUN.coins++; sfx('coin');
+  const s=project(o.x,o.y,0.1); if(s){ for(let i=0;i<6;i++) RUN.parts.push({sx:s.x,sy:s.y,x:s.x,y:s.y,vx:(Math.random()-.5)*120,vy:-Math.random()*120-30,life:0.5,col:o.gold?'#fff':'#ffd23d'}); }
+}
+function crashFx(o){ const s=project(o.x,0.6,0.1); if(s){ for(let i=0;i<18;i++) RUN.parts.push({x:s.x,y:s.y,vx:(Math.random()-.5)*260,vy:-Math.random()*220,life:0.7,col:i%2?'#ff4d6d':'#ffcb3d'}); } }
+
+function updateHUD(){
+  $('hudDist').textContent=Math.floor(RUN.dist);
+  $('hudMult').textContent=RUN.mult.toFixed(2);
+  const cash=Math.floor(betAmount*RUN.mult);
+  $('hudCash').textContent=fmt(cash);
+  $('cashBtnAmt').textContent=fmt(cash);
+  const mb=$('multBox'); mb.classList.toggle('warn', RUN.mult>=2);
+}
+
+/* ---------- render ---------- */
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  drawSky();
+  drawGround();
+  drawScenery();
+  // sortable objects + player
+  const list=RUN.objs.slice();
+  list.push({kind:'player', z:0});
+  list.sort((a,b)=>b.z-a.z);
+  for(const o of list){
+    if(o.kind==='player') drawPlayer();
+    else if(o.kind==='coin'){ if(!o.collected) drawCoin(o); }
+    else drawObst(o);
+  }
+  drawParticles();
+}
+function drawSky(){
+  const hy=H*0.5;
+  let g=ctx.createLinearGradient(0,0,0,hy);
+  g.addColorStop(0,'#1a0c3a'); g.addColorStop(.55,'#3a1a6e'); g.addColorStop(1,'#ff6aa8');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,hy);
+  // sun
+  ctx.fillStyle='rgba(255,210,90,.9)'; ctx.beginPath(); ctx.arc(W*0.5,hy*0.62,38,0,7); ctx.fill();
+  ctx.fillStyle='rgba(255,170,80,.25)'; ctx.beginPath(); ctx.arc(W*0.5,hy*0.62,70,0,7); ctx.fill();
+  if(S.settings.quality!=='low'){
+    ctx.fillStyle='rgba(255,255,255,.6)';
+    for(let i=0;i<18;i++){ const x=((i*97+ (RUN.worldZ*2))%W); const y=(i*53)%(hy*0.5)+6; ctx.fillRect(x,y,2,2); }
+  }
+}
+function drawGround(){
+  const hy=H*0.5;
+  ctx.fillStyle='#241046'; ctx.fillRect(0,hy,W,H-hy);
+  // road stripes (rumble) far->near
+  const SL=3, roadHalf=1.7;
+  for(let i=26;i>=0;i--){
+    const zN=i*SL - (RUN.worldZ % SL);
+    const zF=zN+SL;
+    const a=project(-roadHalf,0,zF), b=project(roadHalf,0,zF), c=project(roadHalf,0,zN), d=project(-roadHalf,0,zN);
+    if(!a||!b||!c||!d) continue;
+    ctx.fillStyle=(i%2===0)?'#3a2a5e':'#322452';
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill();
+  }
+  // lane separators (dashed)
+  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=2;
+  for(const lx of [-0.5,0.5]){
+    for(let i=24;i>=0;i--){
+      const zN=i*2 - (RUN.worldZ%2); const zF=zN+1;
+      const a=project(lx,0.01,zN), b=project(lx,0.01,zF);
+      if(!a||!b) continue;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+  }
+  // road edges glow
+  ctx.strokeStyle='rgba(0,229,255,.5)'; ctx.lineWidth=3;
+  for(const ex of [-roadHalf,roadHalf]){
+    const a=project(ex,0.02,0.2), b=project(ex,0.02,FAR*0.5);
+    if(a&&b){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+  }
+}
+function drawScenery(){
+  if(S.settings.quality==='low') return;
+  const step=6, cols=['#2a1b54','#3a2168','#1f2d6b','#5e2a7a'];
+  const n = S.settings.quality==='high'?16:11;
+  for(let i=n;i>=1;i--){
+    const z=i*step - (RUN.worldZ%step);
+    if(z<=0) continue;
+    const h=1.6 + ((i*7)%5)*0.7;
+    const c=cols[i%cols.length];
+    box3D(-2.7,1.1,0,h,z-0.6,z+0.6,c,'#16103a');
+    box3D(2.7,1.1,0,h,z-0.6,z+0.6,c,'#16103a');
+    // windows hint
+  }
+}
+function box3D(x,w,yB,yT,zN,zF,colFront,colTop){
+  const nbl=project(x-w/2,yB,zN), nbr=project(x+w/2,yB,zN), ntl=project(x-w/2,yT,zN), ntr=project(x+w/2,yT,zN);
+  const ftl=project(x-w/2,yT,zF), ftr=project(x+w/2,yT,zF);
+  if(ntl&&ntr&&ftl&&ftr){ ctx.fillStyle=colTop; ctx.beginPath(); ctx.moveTo(ntl.x,ntl.y);ctx.lineTo(ntr.x,ntr.y);ctx.lineTo(ftr.x,ftr.y);ctx.lineTo(ftl.x,ftl.y);ctx.closePath();ctx.fill(); }
+  if(nbl&&nbr&&ntl&&ntr){ ctx.fillStyle=colFront; ctx.beginPath(); ctx.moveTo(nbl.x,nbl.y);ctx.lineTo(nbr.x,nbr.y);ctx.lineTo(ntr.x,ntr.y);ctx.lineTo(ntl.x,ntl.y);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;ctx.stroke(); }
+}
+function drawObst(o){
+  const d=o.def, zN=o.z-d.depth/2, zF=o.z+d.depth/2;
+  groundShadow(o.x,o.z,d.w);
+  if(d.overhead){
+    // posts + top beam (roll under)
+    box3D(o.x-d.w/2+0.06,0.12,0,d.h,zN,zF,'#7a1f6e','#a83a9a');
+    box3D(o.x+d.w/2-0.06,0.12,0,d.h,zN,zF,'#7a1f6e','#a83a9a');
+    box3D(o.x,d.w,d.underH,d.h,zN,zF,d.col,d.top);
+  } else {
+    box3D(o.x,d.w,0,d.h,zN,zF,d.col,d.top);
+  }
+  // emoji label on near face
+  const c=project(o.x, d.overhead?(d.h+d.underH)/2:d.h*0.55, zN);
+  if(c && c.s>0){ const sz=Math.max(10,Math.min(70,c.s*0.7)); ctx.font=sz+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(d.label,c.x,c.y); }
+}
+function groundShadow(x,z,w){
+  const c=project(x,0.01,z); if(!c)return; const r=Math.max(2,c.s*w*0.55);
+  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(c.x,c.y,r,r*0.32,0,0,7); ctx.fill();
+}
+function drawCoin(o){
+  const c=project(o.x,o.y,o.z); if(!c||c.s<=0) return;
+  const r=Math.max(3,c.s*0.34), wob=Math.abs(Math.cos(o.spin))*0.85+0.15;
+  groundShadow(o.x,o.z,0.5);
+  const g=ctx.createRadialGradient(c.x-r*0.3,c.y-r*0.3,r*0.2,c.x,c.y,r);
+  if(o.gold){ g.addColorStop(0,'#fff'); g.addColorStop(.5,'#ffe27a'); g.addColorStop(1,'#ff9d00'); }
+  else { g.addColorStop(0,'#fff6c8'); g.addColorStop(.55,'#ffcb3d'); g.addColorStop(1,'#c98c00'); }
+  ctx.save(); ctx.translate(c.x,c.y); ctx.scale(wob,1);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill();
+  ctx.strokeStyle='rgba(120,80,0,.6)'; ctx.lineWidth=Math.max(1,r*0.12); ctx.beginPath(); ctx.arc(0,0,r*0.78,0,7); ctx.stroke();
+  ctx.restore();
+  if(r>12){ ctx.fillStyle='#5a3b00'; ctx.font='bold '+Math.floor(r*0.7)+'px Trebuchet MS'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(o.val.toFixed(2).replace(/0$/,'')+'x', c.x, c.y); }
+}
+function drawPlayer(){
+  const p=RUN.player, ch=charById(S.selectedChar);
+  const standH = p.rolling?0.55:1.05;
+  const feet=project(p.x,p.y,0.0), head=project(p.x,p.y+standH,0.0);
+  if(!feet||!head) return;
+  groundShadow(p.x,0.02,0.7);
+  const bw=Math.max(8,(feet.y-head.y)*0.42);
+  const swing=Math.sin(p.anim*2)* (p.onGround?1:0.2);
+  // legs
+  ctx.strokeStyle=ch.c2; ctx.lineWidth=bw*0.34; ctx.lineCap='round';
+  const hipY=feet.y-(feet.y-head.y)*0.42;
+  ctx.beginPath(); ctx.moveTo(feet.x,hipY); ctx.lineTo(feet.x-swing*bw*0.5, feet.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(feet.x,hipY); ctx.lineTo(feet.x+swing*bw*0.5, feet.y); ctx.stroke();
+  // torso
+  const grad=ctx.createLinearGradient(feet.x-bw,head.y,feet.x+bw,feet.y);
+  grad.addColorStop(0,ch.c1); grad.addColorStop(1,ch.c2);
+  ctx.fillStyle=grad; roundRect(feet.x-bw*0.5, head.y+bw*0.55, bw, hipY-(head.y+bw*0.55), bw*0.3);
+  // arms
+  ctx.strokeStyle=ch.c1; ctx.lineWidth=bw*0.26;
+  const armY=head.y+bw*0.9;
+  ctx.beginPath(); ctx.moveTo(feet.x-bw*0.4,armY); ctx.lineTo(feet.x-bw*0.4+swing*bw*0.6,armY+bw*0.8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(feet.x+bw*0.4,armY); ctx.lineTo(feet.x+bw*0.4-swing*bw*0.6,armY+bw*0.8); ctx.stroke();
+  // head
+  ctx.fillStyle=ch.skin; ctx.beginPath(); ctx.arc(feet.x,head.y+bw*0.45,bw*0.5,0,7); ctx.fill();
+  // hair/cap
+  ctx.fillStyle=ch.c1; ctx.beginPath(); ctx.arc(feet.x,head.y+bw*0.32,bw*0.5,Math.PI,0); ctx.fill();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
+function drawParticles(){
+  for(const pt of RUN.parts){ ctx.globalAlpha=Math.max(0,pt.life*1.6); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,3,0,7); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+
+/* ---------- main loop ---------- */
+function loop(now){
+  if(!running) return;
+  let dt=(now-lastT)/1000; lastT=now; if(dt>0.05) dt=0.05;
+  update(dt); draw();
+  raf=requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  refreshBalances();
+  renderHome();
+  // resume audio on first interaction
+  const resume=()=>{ const ac=audioCtx(); if(ac&&ac.state==='suspended') ac.resume(); document.removeEventListener('pointerdown',resume); };
+  document.addEventListener('pointerdown',resume);
+}
+init();
+</script>
+</body>
+</html>
